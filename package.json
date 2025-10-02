@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "zeromq": "^6.5.0"
+  },
+  "type": "module"
+}
