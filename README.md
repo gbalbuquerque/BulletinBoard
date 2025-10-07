@@ -39,9 +39,3 @@ Este projeto seguiu um conjunto de padronizações para garantir a interoperabil
 3.  Construa as imagens dos containers (se aplicável): `docker compose build`
 4.  Inicie o sistema: `docker compose up`
 
----
-
-## 🧑‍💻 Desenvolvedor
-
-**[Seu Nome Completo]**
-**[Seu Link de Contato, Ex: LinkedIn, GitHub Profile]**
