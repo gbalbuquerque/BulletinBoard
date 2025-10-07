@@ -1,5 +1,3 @@
-## 📄 
-
 # 💬 **Sistema de Troca de Mensagens Bulletin Board**
 
 ## Visão Geral do Projeto
