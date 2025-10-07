@@ -3,16 +3,13 @@ from datetime import datetime
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.connect("tcp://broker:5556")  # porta igual à do servidor
+socket.connect("tcp://broker:5555") 
 
 opcao = input("Entre com a opção (login, users, channel, channels, sair): ")
 while opcao != "sair":
     timestamp = datetime.now().timestamp()
 
     match opcao:
-        # =========================
-        # LOGIN
-        # =========================
         case "login":
             login = input("Entre com o login: ")
 
@@ -28,9 +25,6 @@ while opcao != "sair":
             reply = socket.recv_string()
             print(f"Mensagem recebida: {reply}", flush=True)
 
-        # =========================
-        # LISTAR USUÁRIOS
-        # =========================
         case "users":
             request = {
                 "opcao": "users",
@@ -43,9 +37,6 @@ while opcao != "sair":
             reply = socket.recv_string()
             print(f"Mensagem recebida: {reply}", flush=True)
 
-        # =========================
-        # CRIAR CANAL
-        # =========================
         case "channel":
             nome_canal = input("Entre com o nome do canal: ")
 
@@ -61,9 +52,6 @@ while opcao != "sair":
             reply = socket.recv_string()
             print(f"Mensagem recebida: {reply}", flush=True)
 
-        # =========================
-        # LISTAR CANAIS
-        # =========================
         case "channels":
             request = {
                 "opcao": "channels",
@@ -76,9 +64,6 @@ while opcao != "sair":
             reply = socket.recv_string()
             print(f"Mensagem recebida: {reply}", flush=True)
 
-        # =========================
-        # DEFAULT
-        # =========================
         case _:
             print("Opção não encontrada")
 

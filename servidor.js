@@ -3,14 +3,13 @@ import fs from "fs";
 
 const socket = new zmq.Reply();
 await socket.connect("tcp://broker:5556");
+
+
 let erro = "";
 
 let tarefas = {};
 let cont = 0;
 
-// ===============================
-// Persistência em disco
-// ===============================
 const DATA_FILE = "data.json";
 
 function loadData() {
@@ -49,16 +48,11 @@ for await (const [msg] of socket) {
   console.log("Tarefas atuais:", tarefas);
 
   switch (opcao) {
-    // =================================
-    // LOGIN
-    // =================================
     case "login":
       console.log(`Mensagem recebida ${JSON.stringify(request)}`)
       if (!erro) {
         tarefas[cont] = data;
         cont++;
-
-        // Salva em disco
         const { user, timestamp } = data;
         if (user) {
           const exists = db.users.find(u => u.user === user);
@@ -89,9 +83,6 @@ for await (const [msg] of socket) {
         break;
       }
 
-    // =================================
-    // LISTAR USUÁRIOS
-    // =================================
     case "users":
       reply = {
         service: "users",
@@ -102,9 +93,6 @@ for await (const [msg] of socket) {
       };
       break;
 
-    // =================================
-    // CRIAR CANAL
-    // =================================
     case "channel": {
       const { channel, timestamp } = data;
       if (!channel) {
@@ -135,9 +123,6 @@ for await (const [msg] of socket) {
       break;
     }
 
-    // =================================
-    // LISTAR CANAIS
-    // =================================
     case "channels":
       reply = {
         service: "channels",
@@ -148,9 +133,6 @@ for await (const [msg] of socket) {
       };
       break;
 
-    // =================================
-    // DEFAULT
-    // =================================
     default:
       reply = "ERRO: função não encontrada";
   }
