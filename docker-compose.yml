@@ -15,6 +15,7 @@ services:
     container_name: servidor
     volumes:
       - ./servidor.js:/app/servidor.js
+      - ./data:/app/data
     depends_on:
       - broker
 

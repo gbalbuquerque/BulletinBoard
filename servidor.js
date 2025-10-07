@@ -10,7 +10,7 @@ let erro = "";
 let tarefas = {};
 let cont = 0;
 
-const DATA_FILE = "data.json";
+const DATA_FILE = "./data/data.json";
 
 function loadData() {
   if (!fs.existsSync(DATA_FILE)) {
