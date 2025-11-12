@@ -4,6 +4,22 @@ import time
 import msgpack
 from datetime import datetime
 
+CLIENT_TAG = "[cliente-bot]"
+_original_print = print
+
+
+def print(*args, **kwargs):  # noqa: A001 - shadowing built-in intencional
+    kwargs.setdefault("flush", True)
+    if not args:
+        return _original_print(CLIENT_TAG, **kwargs)
+
+    first, *rest = args
+    if isinstance(first, str) and first.startswith(CLIENT_TAG):
+        return _original_print(first, *rest, **kwargs)
+
+    return _original_print(f"{CLIENT_TAG} {first}", *rest, **kwargs)
+
+
 context = zmq.Context()
 
 
@@ -22,11 +38,11 @@ def reset_req_socket():
     except Exception:
         pass
     req_socket = create_req_socket()
-    print("Socket REQ recriado e reconectado ao broker", flush=True)
+    print("Socket REQ recriado e reconectado ao broker")
 
 
 req_socket = create_req_socket()
-print("Socket conectado ao broker: tcp://broker:5555", flush=True)
+print("Socket conectado ao broker: tcp://broker:5555")
 
 # Socket para receber mensagens Pub/Sub
 sub_socket = context.socket(zmq.SUB)
@@ -34,7 +50,7 @@ sub_socket.connect("tcp://proxy:5557")
 
 # Gera um nome de usuário aleatório
 username = f"user_{random.randint(1000, 9999)}"
-print(f"Cliente automático iniciado com usuário: {username}", flush=True)
+print(f"Cliente automático iniciado com usuário: {username}")
 
 # Relógio lógico
 logical_clock = 0
@@ -60,14 +76,14 @@ def send_request(request, descricao, max_attempts=3, max_wait_attempts=6):
         except zmq.Again:
             print(f"Timeout ao enviar requisição de {descricao} (tentativa {attempt}/{max_attempts})", flush=True)
             reset_req_socket()
-            time.sleep(1)
+            time.sleep(0.2)
             continue
         except Exception as e:
             print(f"Erro ao enviar requisição de {descricao}: {e}", flush=True)
             import traceback
             traceback.print_exc()
             reset_req_socket()
-            time.sleep(1)
+            time.sleep(0.2)
             continue
 
         for wait in range(1, max_wait_attempts + 1):
@@ -91,7 +107,7 @@ def send_request(request, descricao, max_attempts=3, max_wait_attempts=6):
             flush=True,
         )
         reset_req_socket()
-        time.sleep(1)
+        time.sleep(0.2)
 
     print(f"Falha ao concluir {descricao} após {max_attempts} tentativas.", flush=True)
     return None
@@ -117,11 +133,8 @@ while True:
         print(f"Login realizado: {reply}", flush=True)
         break
 
-    print("ERRO: Falha ao fazer login, tentando novamente em 3 segundos...", flush=True)
-    time.sleep(3)
-
-# Aguarda um pouco para garantir que o servidor está pronto
-time.sleep(2)
+    print("ERRO: Falha ao fazer login, tentando novamente rapidamente...")
+    time.sleep(1)
 
 # Inscreve-se no próprio tópico para receber mensagens diretas
 sub_socket.setsockopt_string(zmq.SUBSCRIBE, username)
@@ -156,20 +169,20 @@ def obter_canais():
         }
         reply = send_request(request, "channels")
         if not reply:
-            print("Resposta ausente ao obter canais", flush=True)
+            print("Resposta ausente ao obter canais")
             return []
 
-        print(f"Resposta de canais recebida: {reply}", flush=True)
+            print(f"Resposta de canais recebida: {reply}")
         if reply.get("data", {}).get("clock") is not None:
             update_logical_clock(reply["data"]["clock"])
         if reply.get("service") == "channels" and "channels" in reply.get("data", {}):
             canais = reply["data"]["channels"]
-            print(f"Canais obtidos: {canais}", flush=True)
+            print(f"Canais obtidos: {canais}")
             return canais
-        print(f"Resposta inesperada ao obter canais: {reply}", flush=True)
+        print(f"Resposta inesperada ao obter canais: {reply}")
         return []
     except Exception as e:
-        print(f"Erro ao obter canais: {e}", flush=True)
+        print(f"Erro ao obter canais: {e}")
         import traceback
         traceback.print_exc()
         reset_req_socket()
@@ -193,25 +206,25 @@ def criar_canal_se_necessario():
             },
         }
         try:
-            print(f"Tentando criar canal '{canal}'...", flush=True)
+            print(f"Tentando criar canal '{canal}'...")
             reply = send_request(request, "criação de canal")
             if not reply:
-                print(f"Falha ao criar canal '{canal}'", flush=True)
+                print(f"Falha ao criar canal '{canal}'")
                 return []
 
-            print(f"Resposta de criação de canal recebida: {reply}", flush=True)
+            print(f"Resposta de criação de canal recebida: {reply}")
             if reply.get("data", {}).get("clock") is not None:
                 update_logical_clock(reply["data"]["clock"])
             status = reply.get("data", {}).get("status", "erro")
             if status == "sucesso":
-                print(f"Canal '{canal}' criado com sucesso", flush=True)
+                print(f"Canal '{canal}' criado com sucesso")
                 return [canal]
             else:
                 error_msg = reply.get("data", {}).get("description", "Erro desconhecido")
-                print(f"Erro ao criar canal '{canal}': {error_msg}", flush=True)
+                print(f"Erro ao criar canal '{canal}': {error_msg}")
                 return []
         except Exception as e:
-            print(f"Exceção ao criar canal: {e}", flush=True)
+            print(f"Exceção ao criar canal: {e}")
             import traceback
             traceback.print_exc()
             reset_req_socket()
@@ -220,22 +233,22 @@ def criar_canal_se_necessario():
 
 
 # Loop principal
-print("Iniciando loop principal...", flush=True)
+print("Iniciando loop principal...")
 try:
     while True:
         # Obtém ou cria canais
-        print("Obtendo lista de canais...", flush=True)
+        print("Obtendo lista de canais...")
         canais = criar_canal_se_necessario()
 
         if not canais:
-            print("Aguardando criação de canais...", flush=True)
-            time.sleep(5)
+            print("Aguardando criação de canais...")
+            time.sleep(1)
             continue
 
-        print(f"Canais disponíveis: {canais}", flush=True)
+        print(f"Canais disponíveis: {canais}")
         # Escolhe um canal aleatório
         canal_escolhido = random.choice(canais)
-        print(f"\n=== Enviando 10 mensagens para o canal '{canal_escolhido}' ===", flush=True)
+        print(f"\n=== Enviando 10 mensagens para o canal '{canal_escolhido}' ===")
 
         # Envia 10 mensagens
         for i in range(10):
@@ -255,31 +268,29 @@ try:
             }
 
             try:
-                print(f"  [{i+1}/10] Enviando mensagem: {mensagem[:30]}...", flush=True)
+                print(f"  [{i+1}/10] Enviando mensagem: {mensagem[:30]}...")
                 reply = send_request(request, "publicação")
                 if not reply:
-                    print(f"  [{i+1}/10] ✗ Sem resposta ao publicar", flush=True)
+                    print(f"  [{i+1}/10] ✗ Sem resposta ao publicar")
                     continue
 
-                print(f"  [{i+1}/10] Resposta recebida: {reply}", flush=True)
+                print(f"  [{i+1}/10] Resposta recebida: {reply}")
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
 
                 if reply.get("data", {}).get("status") == "OK":
-                    print(f"  [{i+1}/10] ✓ Mensagem publicada com sucesso: {mensagem[:50]}...", flush=True)
+                    print(f"  [{i+1}/10] ✓ Mensagem publicada com sucesso: {mensagem[:50]}...")
                 else:
                     error_msg = reply.get("data", {}).get("message", "Erro desconhecido")
-                    print(f"  [{i+1}/10] ✗ Erro ao publicar: {error_msg}", flush=True)
-                    print(f"  Resposta completa: {reply}", flush=True)
+                    print(f"  [{i+1}/10] ✗ Erro ao publicar: {error_msg}")
+                    print(f"  Resposta completa: {reply}")
             except Exception as e:
-                print(f"  [{i+1}/10] ✗ Exceção ao publicar: {e}", flush=True)
+                print(f"  [{i+1}/10] ✗ Exceção ao publicar: {e}")
                 import traceback
                 traceback.print_exc()
                 reset_req_socket()
 
-            time.sleep(0.5)  # Pequeno delay entre mensagens
-
-        print(f"=== Concluído envio de 10 mensagens para '{canal_escolhido}' ===\n", flush=True)
+        print(f"=== Concluído envio de 10 mensagens para '{canal_escolhido}' ===\n")
 
         # Verifica se há mensagens recebidas (não bloqueante)
         try:
@@ -290,15 +301,12 @@ try:
             # Atualiza relógio lógico ao receber mensagem Pub/Sub
             if data.get("clock") is not None:
                 update_logical_clock(data["clock"])
-            print(f"📨 Mensagem recebida no tópico '{topic}': {data}", flush=True)
+            print(f"📨 Mensagem recebida no tópico '{topic}': {data}")
         except zmq.Again:
             pass  # Nenhuma mensagem recebida
 
-        # Aguarda antes de começar o próximo ciclo
-        time.sleep(2)
-
 except KeyboardInterrupt:
-    print(f"\nCliente automático {username} encerrado.", flush=True)
+    print(f"\nCliente automático {username} encerrado.")
 finally:
     try:
         req_socket.close()

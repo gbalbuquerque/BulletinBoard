@@ -2,10 +2,26 @@ import zmq
 import msgpack
 from datetime import datetime
 
+CLIENT_TAG = "[cliente]"
+_original_print = print
+
+
+def print(*args, **kwargs):  # noqa: A001 - shadowing built-in intencional
+    kwargs.setdefault("flush", True)
+    if not args:
+        return _original_print(CLIENT_TAG, **kwargs)
+
+    first, *rest = args
+    if isinstance(first, str) and first.startswith(CLIENT_TAG):
+        return _original_print(first, *rest, **kwargs)
+
+    return _original_print(f"{CLIENT_TAG} {first}", *rest, **kwargs)
+
+
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.setsockopt(zmq.RCVTIMEO, 30000)  # Timeout de 30 segundos
-socket.setsockopt(zmq.SNDTIMEO, 30000)  # Timeout de 30 segundos
+socket.setsockopt(zmq.RCVTIMEO, 15000)  # Timeout reduzido para respostas mais ágeis
+socket.setsockopt(zmq.SNDTIMEO, 15000)
 socket.connect("tcp://broker:5555")
 
 # Relógio lógico
@@ -20,13 +36,17 @@ def increment_logical_clock():
     logical_clock += 1
     return logical_clock 
 
-opcao = input("Entre com a opção (login, users, channel, channels, publish, message, sair): ")
+def prompt(message: str) -> str:
+    return input(f"{CLIENT_TAG} {message}")
+
+
+opcao = prompt("Entre com a opção (login, users, channel, channels, publish, message, sair): ")
 while opcao != "sair":
     timestamp = datetime.now().timestamp()
 
     match opcao:
         case "login":
-            login = input("Entre com o login: ")
+            login = prompt("Entre com o login: ")
 
             increment_logical_clock()
             request = {
@@ -39,16 +59,16 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}", flush=True)
+                print(f"Mensagem enviada: {request}")
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}", flush=True)
+                print(f"Mensagem recebida: {reply}")
             except zmq.Again:
-                print("ERRO: Timeout ao aguardar resposta do servidor", flush=True)
+                print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
-                print(f"ERRO ao processar resposta: {e}", flush=True)
+                print(f"ERRO ao processar resposta: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -63,21 +83,21 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}", flush=True)
+                print(f"Mensagem enviada: {request}")
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}", flush=True)
+                print(f"Mensagem recebida: {reply}")
             except zmq.Again:
-                print("ERRO: Timeout ao aguardar resposta do servidor", flush=True)
+                print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
-                print(f"ERRO ao processar resposta: {e}", flush=True)
+                print(f"ERRO ao processar resposta: {e}")
                 import traceback
                 traceback.print_exc()
 
         case "channel":
-            nome_canal = input("Entre com o nome do canal: ")
+            nome_canal = prompt("Entre com o nome do canal: ")
 
             increment_logical_clock()
             request = {
@@ -90,16 +110,16 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}", flush=True)
+                print(f"Mensagem enviada: {request}")
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}", flush=True)
+                print(f"Mensagem recebida: {reply}")
             except zmq.Again:
-                print("ERRO: Timeout ao aguardar resposta do servidor", flush=True)
+                print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
-                print(f"ERRO ao processar resposta: {e}", flush=True)
+                print(f"ERRO ao processar resposta: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -114,23 +134,23 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}", flush=True)
+                print(f"Mensagem enviada: {request}")
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}", flush=True)
+                print(f"Mensagem recebida: {reply}")
             except zmq.Again:
-                print("ERRO: Timeout ao aguardar resposta do servidor", flush=True)
+                print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
-                print(f"ERRO ao processar resposta: {e}", flush=True)
+                print(f"ERRO ao processar resposta: {e}")
                 import traceback
                 traceback.print_exc()
 
         case "publish":
-            user = input("Entre com o nome do usuário: ")
-            canal = input("Entre com o nome do canal: ")
-            mensagem = input("Entre com a mensagem: ")
+            user = prompt("Entre com o nome do usuário: ")
+            canal = prompt("Entre com o nome do canal: ")
+            mensagem = prompt("Entre com a mensagem: ")
 
             increment_logical_clock()
             request = {
@@ -145,23 +165,23 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}", flush=True)
+                print(f"Mensagem enviada: {request}")
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}", flush=True)
+                print(f"Mensagem recebida: {reply}")
             except zmq.Again:
-                print("ERRO: Timeout ao aguardar resposta do servidor", flush=True)
+                print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
-                print(f"ERRO ao processar resposta: {e}", flush=True)
+                print(f"ERRO ao processar resposta: {e}")
                 import traceback
                 traceback.print_exc()
 
         case "message":
-            src = input("Entre com o nome do usuário de origem: ")
-            dst = input("Entre com o nome do usuário de destino: ")
-            mensagem = input("Entre com a mensagem: ")
+            src = prompt("Entre com o nome do usuário de origem: ")
+            dst = prompt("Entre com o nome do usuário de destino: ")
+            mensagem = prompt("Entre com a mensagem: ")
 
             increment_logical_clock()
             request = {
@@ -176,20 +196,20 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}", flush=True)
+                print(f"Mensagem enviada: {request}")
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}", flush=True)
+                print(f"Mensagem recebida: {reply}")
             except zmq.Again:
-                print("ERRO: Timeout ao aguardar resposta do servidor", flush=True)
+                print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
-                print(f"ERRO ao processar resposta: {e}", flush=True)
+                print(f"ERRO ao processar resposta: {e}")
                 import traceback
                 traceback.print_exc()
 
         case _:
             print("Opção não encontrada")
 
-    opcao = input("\nEntre com a opção (login, users, channel, channels, publish, message, sair): ")
+    opcao = prompt("\nEntre com a opção (login, users, channel, channels, publish, message, sair): ")

@@ -2,6 +2,35 @@ import zmq from "zeromq";
 import fs from "fs";
 import { encode, decode } from "@msgpack/msgpack";
 
+const serverName =
+  process.env.SERVER_NAME || process.env.HOSTNAME || `server_${Date.now()}`;
+const containerName = process.env.HOSTNAME || serverName;
+
+const originalLog = console.log.bind(console);
+const originalWarn = console.warn.bind(console);
+const originalError = console.error.bind(console);
+
+function logWithTag(originalFn, args) {
+  const prefix = `[${serverName}]`;
+  if (args.length === 0) {
+    return originalFn(prefix);
+  }
+
+  const [first, ...rest] = args;
+  if (typeof first === "string") {
+    if (first.startsWith(prefix)) {
+      return originalFn(first, ...rest);
+    }
+    return originalFn(`${prefix} ${first}`, ...rest);
+  }
+
+  return originalFn(prefix, first, ...rest);
+}
+
+console.log = (...args) => logWithTag(originalLog, args);
+console.warn = (...args) => logWithTag(originalWarn, args);
+console.error = (...args) => logWithTag(originalError, args);
+
 const socket = new zmq.Reply();
 await socket.connect("tcp://broker:5556");
 console.log("Socket Reply conectado ao broker: tcp://broker:5556");
@@ -63,9 +92,6 @@ let logicalClock = 0;
 // Relógio físico (ajustado pela sincronização Berkeley)
 let physicalClockOffset = 0;
 
-// Informações do servidor
-const serverName = process.env.SERVER_NAME || process.env.HOSTNAME || `server_${Date.now()}`;
-const containerName = process.env.HOSTNAME || serverName;
 let serverRank = -1;
 let coordinator = null;
 let coordinatorContainer = null; // Nome do container do coordenador
