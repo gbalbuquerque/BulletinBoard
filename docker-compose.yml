@@ -8,16 +8,33 @@ services:
       - 5555:5555
       - 5556:5556
 
+  referencia:
+    build:
+      context: .
+      dockerfile: Dockerfile_referencia
+    container_name: referencia
+    ports:
+      - 5559:5559
+    volumes:
+      - ./referencia.py:/app/referencia.py
+
   servidor:
     build:
       context: .
       dockerfile: Dockerfile_servidor
-    container_name: servidor
     volumes:
       - ./servidor.js:/app/servidor.js
       - ./data:/app/data
+    environment:
+      - SERVER_NAME=${SERVER_NAME:-servidor}
+    ports:
+      - "5560-5562:5560"
     depends_on:
       - broker
+      - proxy_pubsub
+      - referencia
+    deploy:
+      replicas: 3
 
   cliente:
     build:
@@ -28,5 +45,28 @@ services:
     tty: true
     depends_on:
       - servidor
+      - referencia
     volumes:
       - ./cliente.py:/app/cliente.py
+  
+  proxy_pubsub:
+    build:
+      context: .
+      dockerfile: Dockerfile_proxy
+    container_name: proxy_pubsub
+    ports:
+      - 5557:5557
+      - 5558:5558
+
+  cliente_automatico:
+    build:
+      context: .
+      dockerfile: Dockerfile_cliente_automatico
+    volumes:
+      - ./cliente_automatico.py:/app/cliente_automatico.py
+    depends_on:
+      - servidor
+      - proxy_pubsub
+      - referencia
+    deploy:
+      replicas: 2

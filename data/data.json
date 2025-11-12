@@ -3,12 +3,88 @@
     {
       "user": "guigo",
       "timestamp": 1759880422.466244
+    },
+    {
+      "user": "user_6159",
+      "timestamp": 1762925902.563366
+    },
+    {
+      "user": "user_4219",
+      "timestamp": 1762925902.727985
+    },
+    {
+      "user": "user_6212",
+      "timestamp": 1762927740.773199
+    },
+    {
+      "user": "user_9239",
+      "timestamp": 1762928753.254408
+    },
+    {
+      "user": "user_9320",
+      "timestamp": 1762928753.479974
+    },
+    {
+      "user": "user_1011",
+      "timestamp": 1762929036.428141
+    },
+    {
+      "user": "user_2372",
+      "timestamp": 1762929036.683605
+    },
+    {
+      "user": "test_local",
+      "timestamp": 1762929148.0271566
+    },
+    {
+      "user": "test_wait",
+      "timestamp": 1762929193.6405787
+    },
+    {
+      "user": "user_4409",
+      "timestamp": 1762929273.524096
+    },
+    {
+      "user": "user_7678",
+      "timestamp": 1762929273.743938
+    },
+    {
+      "user": "user_6115",
+      "timestamp": 1762929450.426912
+    },
+    {
+      "user": "user_6132",
+      "timestamp": 1762929450.586052
+    },
+    {
+      "user": "user_4264",
+      "timestamp": 1762929598.727628
+    },
+    {
+      "user": "user_4300",
+      "timestamp": 1762929598.94802
+    },
+    {
+      "user": "user_2249",
+      "timestamp": 1762929664.875709
+    },
+    {
+      "user": "user_9268",
+      "timestamp": 1762929665.04331
+    },
+    {
+      "user": "user_9073",
+      "timestamp": 1762930240.630736
     }
   ],
   "channels": [
     {
       "channel": "guigoland",
       "timestamp": 1759880453.802724
+    },
+    {
+      "channel": "rogerio evas",
+      "timestamp": 1762929849.314262
     }
   ]
 }

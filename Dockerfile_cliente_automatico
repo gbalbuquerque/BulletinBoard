@@ -1,0 +1,10 @@
+FROM python:3.13.7-alpine3.21
+
+WORKDIR /app
+
+RUN pip install pyzmq msgpack
+
+COPY ./cliente_automatico.py .
+
+CMD ["python", "cliente_automatico.py"]
+

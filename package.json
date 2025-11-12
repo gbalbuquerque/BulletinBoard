@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "zeromq": "^6.5.0"
+    "zeromq": "^6.5.0",
+    "@msgpack/msgpack": "^3.0.0"
   },
   "type": "module"
 }
