@@ -83,6 +83,46 @@
     {
       "user": "user_8235",
       "timestamp": 1762965323.088756
+    },
+    {
+      "user": "user_5158",
+      "timestamp": 1762966184.484475
+    },
+    {
+      "user": "user_4312",
+      "timestamp": 1762966839.560014
+    },
+    {
+      "user": "user_1132",
+      "timestamp": 1762967839.544178
+    },
+    {
+      "user": "user_2308",
+      "timestamp": 1762968866.430914
+    },
+    {
+      "user": "user_5897",
+      "timestamp": 1762972284.106311
+    },
+    {
+      "user": "user_1365",
+      "timestamp": 1762972609.841598
+    },
+    {
+      "user": "user_9517",
+      "timestamp": 1762973456.580322
+    },
+    {
+      "user": "user_3878",
+      "timestamp": 1762974128.267858
+    },
+    {
+      "user": "user_1098",
+      "timestamp": 1762974621.377993
+    },
+    {
+      "user": "user_6763",
+      "timestamp": 1762975379.184862
     }
   ],
   "channels": [
@@ -93,6 +133,10 @@
     {
       "channel": "rogerio evas",
       "timestamp": 1762929849.314262
+    },
+    {
+      "channel": "noticias",
+      "timestamp": 1762971887.852559
     }
   ]
 }

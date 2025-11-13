@@ -1,3 +1,4 @@
+import os
 import zmq
 import random
 import time
@@ -22,11 +23,12 @@ def print(*args, **kwargs):  # noqa: A001 - shadowing built-in intencional
 
 context = zmq.Context()
 
+# Configuração opcional para espaçar bots e evitar rajadas simultâneas
+SPREAD_SECONDS = float(os.getenv("BOT_SPREAD_SECONDS", "2"))
+
 
 def create_req_socket():
     socket = context.socket(zmq.REQ)
-    socket.setsockopt(zmq.RCVTIMEO, 10000)  # Timeout de 10 segundos por tentativa
-    socket.setsockopt(zmq.SNDTIMEO, 10000)
     socket.connect("tcp://broker:5555")
     return socket
 
@@ -46,7 +48,7 @@ print("Socket conectado ao broker: tcp://broker:5555")
 
 # Socket para receber mensagens Pub/Sub
 sub_socket = context.socket(zmq.SUB)
-sub_socket.connect("tcp://proxy:5557")
+sub_socket.connect("tcp://proxy:5558")
 
 # Gera um nome de usuário aleatório
 username = f"user_{random.randint(1000, 9999)}"
@@ -67,7 +69,7 @@ def increment_logical_clock():
     return logical_clock
 
 
-def send_request(request, descricao, max_attempts=3, max_wait_attempts=6):
+def send_request(request, descricao, max_attempts=3):
     global req_socket
 
     for attempt in range(1, max_attempts + 1):
@@ -76,38 +78,26 @@ def send_request(request, descricao, max_attempts=3, max_wait_attempts=6):
         except zmq.Again:
             print(f"Timeout ao enviar requisição de {descricao} (tentativa {attempt}/{max_attempts})", flush=True)
             reset_req_socket()
-            time.sleep(0.2)
             continue
         except Exception as e:
             print(f"Erro ao enviar requisição de {descricao}: {e}", flush=True)
             import traceback
             traceback.print_exc()
             reset_req_socket()
-            time.sleep(0.2)
             continue
 
-        for wait in range(1, max_wait_attempts + 1):
-            try:
-                reply_raw = req_socket.recv()
-                reply = msgpack.unpackb(reply_raw, raw=False)
-                return reply
-            except zmq.Again:
-                print(
-                    f"Ainda aguardando resposta de {descricao} (tentativa {wait}/{max_wait_attempts})",
-                    flush=True,
-                )
-            except Exception as e:
-                print(f"Erro ao receber resposta de {descricao}: {e}", flush=True)
-                import traceback
-                traceback.print_exc()
-                break
+        try:
+            reply_raw = req_socket.recv()
+            reply = msgpack.unpackb(reply_raw, raw=False)
+            return reply
+        except Exception as e:
+            print(f"Erro ao receber resposta de {descricao}: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
+            break
 
-        print(
-            f"Nenhuma resposta para {descricao}. Recriando socket e tentando novamente...",
-            flush=True,
-        )
+        print(f"Nenhuma resposta para {descricao}. Recriando socket e tentando novamente...", flush=True)
         reset_req_socket()
-        time.sleep(0.2)
 
     print(f"Falha ao concluir {descricao} após {max_attempts} tentativas.", flush=True)
     return None
@@ -134,11 +124,15 @@ while True:
         break
 
     print("ERRO: Falha ao fazer login, tentando novamente rapidamente...")
-    time.sleep(1)
 
 # Inscreve-se no próprio tópico para receber mensagens diretas
 sub_socket.setsockopt_string(zmq.SUBSCRIBE, username)
 print(f"Inscrito no tópico: {username}", flush=True)
+
+if SPREAD_SECONDS > 0:
+    initial_delay = random.uniform(0, SPREAD_SECONDS)
+    print(f"Atraso inicial para desfasar bots: {initial_delay:.2f}s", flush=True)
+    time.sleep(initial_delay)
 
 # Lista de mensagens pré-definidas
 mensagens = [
@@ -242,17 +236,16 @@ try:
 
         if not canais:
             print("Aguardando criação de canais...")
-            time.sleep(1)
             continue
 
         print(f"Canais disponíveis: {canais}")
         # Escolhe um canal aleatório
         canal_escolhido = random.choice(canais)
-        print(f"\n=== Enviando 10 mensagens para o canal '{canal_escolhido}' ===")
+        print(f"\nEnviando mensagens para o canal '{canal_escolhido}'")
 
-        # Envia 10 mensagens
-        for i in range(10):
-            mensagem = mensagens[i % len(mensagens)]
+        # Envia mensagens continuamente
+        for i in range(len(mensagens)):
+            mensagem = mensagens[i]
             timestamp = datetime.now().timestamp()
 
             increment_logical_clock()
@@ -268,40 +261,44 @@ try:
             }
 
             try:
-                print(f"  [{i+1}/10] Enviando mensagem: {mensagem[:30]}...")
+                print(f"Enviando mensagem: {mensagem[:30]}...")
+                print(f"Mensagem enviada: {request}")
                 reply = send_request(request, "publicação")
                 if not reply:
-                    print(f"  [{i+1}/10] ✗ Sem resposta ao publicar")
+                    print("✗ Sem resposta ao publicar")
                     continue
 
-                print(f"  [{i+1}/10] Resposta recebida: {reply}")
+                print(f"Resposta recebida: {reply}")
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
 
                 if reply.get("data", {}).get("status") == "OK":
-                    print(f"  [{i+1}/10] ✓ Mensagem publicada com sucesso: {mensagem[:50]}...")
+                    print(f"✓ Mensagem publicada com sucesso: {mensagem[:50]}...")
                 else:
                     error_msg = reply.get("data", {}).get("message", "Erro desconhecido")
-                    print(f"  [{i+1}/10] ✗ Erro ao publicar: {error_msg}")
-                    print(f"  Resposta completa: {reply}")
+                    print(f"✗ Erro ao publicar: {error_msg}")
+                    print(f"Resposta completa: {reply}")
             except Exception as e:
-                print(f"  [{i+1}/10] ✗ Exceção ao publicar: {e}")
+                print(f"✗ Exceção ao publicar: {e}")
                 import traceback
                 traceback.print_exc()
                 reset_req_socket()
 
-        print(f"=== Concluído envio de 10 mensagens para '{canal_escolhido}' ===\n")
+        print("Fim do lote atual.\n")
+        if SPREAD_SECONDS > 0:
+            drift_delay = random.uniform(0, SPREAD_SECONDS)
+            print(f"Aguardando {drift_delay:.2f}s antes do próximo lote", flush=True)
+            time.sleep(drift_delay)
 
         # Verifica se há mensagens recebidas (não bloqueante)
         try:
-            sub_socket.setsockopt(zmq.RCVTIMEO, 100)  # Timeout de 100ms
-            topic = sub_socket.recv_string()
-            message = sub_socket.recv()
+            topic = sub_socket.recv_string(zmq.NOBLOCK)
+            message = sub_socket.recv(zmq.NOBLOCK)
             data = msgpack.unpackb(message, raw=False)
             # Atualiza relógio lógico ao receber mensagem Pub/Sub
             if data.get("clock") is not None:
                 update_logical_clock(data["clock"])
-            print(f"📨 Mensagem recebida no tópico '{topic}': {data}")
+            print(f"Mensagem recebida no tópico '{topic}': {data}")
         except zmq.Again:
             pass  # Nenhuma mensagem recebida
 

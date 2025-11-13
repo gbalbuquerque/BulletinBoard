@@ -20,8 +20,6 @@ def print(*args, **kwargs):  # noqa: A001 - shadowing built-in intencional
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.setsockopt(zmq.RCVTIMEO, 15000)  # Timeout reduzido para respostas mais ágeis
-socket.setsockopt(zmq.SNDTIMEO, 15000)
 socket.connect("tcp://broker:5555")
 
 # Relógio lógico
@@ -35,6 +33,12 @@ def increment_logical_clock():
     global logical_clock
     logical_clock += 1
     return logical_clock 
+
+
+def log_io(direction: str, payload: dict):
+    label = "enviada" if direction == "send" else "recebida"
+    print(f"Mensagem {label}: {payload}")
+
 
 def prompt(message: str) -> str:
     return input(f"{CLIENT_TAG} {message}")
@@ -59,12 +63,12 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}")
+                log_io("send", request)
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}")
+                log_io("recv", reply)
             except zmq.Again:
                 print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
@@ -83,12 +87,12 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}")
+                log_io("send", request)
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}")
+                log_io("recv", reply)
             except zmq.Again:
                 print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
@@ -110,12 +114,12 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}")
+                log_io("send", request)
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}")
+                log_io("recv", reply)
             except zmq.Again:
                 print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
@@ -134,12 +138,12 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}")
+                log_io("send", request)
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}")
+                log_io("recv", reply)
             except zmq.Again:
                 print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
@@ -165,12 +169,12 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}")
+                log_io("send", request)
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}")
+                log_io("recv", reply)
             except zmq.Again:
                 print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:
@@ -196,12 +200,12 @@ while opcao != "sair":
             }
             try:
                 socket.send(msgpack.packb(request))
-                print(f"Mensagem enviada: {request}")
+                log_io("send", request)
                 reply_bytes = socket.recv()
                 reply = msgpack.unpackb(reply_bytes, raw=False)
                 if reply.get("data", {}).get("clock") is not None:
                     update_logical_clock(reply["data"]["clock"])
-                print(f"Mensagem recebida: {reply}")
+                log_io("recv", reply)
             except zmq.Again:
                 print("ERRO: Timeout ao aguardar resposta do servidor")
             except Exception as e:

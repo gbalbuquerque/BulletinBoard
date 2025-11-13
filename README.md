@@ -16,6 +16,26 @@ O sistema implementa as seguintes interações básicas entre usuários e o serv
 
 ---
 
+## 👩‍💻 Cliente
+
+### Mensagens Enviadas
+- `login`: `{ service: "login", data: { user, timestamp, clock } }`
+- `users`: `{ service: "users", data: { timestamp, clock } }`
+- `channel`: `{ service: "channel", data: { channel, timestamp, clock } }`
+- `channels`: `{ service: "channels", data: { timestamp, clock } }`
+- `publish`: `{ service: "publish", data: { user, channel, message, timestamp, clock } }`
+- `message`: `{ service: "message", data: { src, dst, message, timestamp, clock } }`
+
+### Mensagens Recebidas
+- Respostas REP do servidor com `status`, `timestamp`, `clock` e, quando aplicável, campos de erro (`description`/`message`).
+- Publicações via proxy (`proxy:5558`) para:
+  - Tópico com o nome do usuário (mensagens privadas).
+  - Tópicos de canais inscritos (mensagens em canais).
+
+O cliente interativo (`cliente.py`) e o cliente automático (`cliente_automatico.py`) compartilham o mesmo protocolo MessagePack, incrementando o relógio lógico antes de cada envio e atualizando com base nas mensagens recebidas.
+
+---
+
 ## 🛠️ Tecnologias e Arquitetura
 
 Este projeto seguiu um conjunto de padronizações para garantir a interoperabilidade e a testabilidade, e integrou escolhas livres de tecnologia para demonstrar proficiência em múltiplas linguagens e armazenamento de dados.
@@ -48,6 +68,25 @@ graph LR
 ```
 
 No arquivo `docker-compose.yml` os serviços com múltiplas instâncias (`servidor` e `cliente_automatico`) são declarados com `deploy.replicas`, garantindo que todas as réplicas utilizem exatamente o mesmo código e configuração.
+
+---
+
+## 🖥️ Servidor
+
+### Mensagens Recebidas
+- Requisições REQ/REP encaminhadas pelo broker (`broker:5556`) com `service`/`data` serializados em MessagePack.
+- Chamadas ao servidor de referência (`rank`, `list`, `heartbeat`) para eleição, monitoramento e clock lógico.
+- Publicações via proxy (`proxy:5558`) nos tópicos `servers` (anúncio de coordenador) e `replication` (eventos de dados).
+- Requisições diretas de outros servidores (`election`, `clock`) na porta 5560.
+
+### Mensagens Enviadas
+- Respostas REP aos clientes preservando o `service` original e preenchendo `status`, `timestamp`, `clock` e mensagens de erro quando necessário.
+- Publicações em canais e mensagens privadas via proxy (`proxy:5557`), usando o nome do canal ou do destinatário como tópico.
+- Eventos de replicação no tópico `replication`, incluindo `operation`, `operationData`, `serverName`, `timestamp` e `clock`.
+- Broadcasts no tópico `servers` anunciando novos coordenadores.
+- Replies `rank/list/heartbeat` para o servidor de referência e `election/clock` para outros servidores.
+
+Todas as operações mutáveis são persistidas em `data/` (arquivos JSON) e replicadas para garantir consistência eventual entre as réplicas.
 
 ### 🌐 Padronizações (Requisitos do Enunciado)
 

@@ -1,10 +1,11 @@
 import zmq from "zeromq";
 import fs from "fs";
+const { promises: fsp } = fs;
 import { encode, decode } from "@msgpack/msgpack";
 
-const serverName =
-  process.env.SERVER_NAME || process.env.HOSTNAME || `server_${Date.now()}`;
-const containerName = process.env.HOSTNAME || serverName;
+const containerName = process.env.HOSTNAME || `server_${Date.now()}`;
+const serverName = process.env.SERVER_NAME || containerName;
+const serverId = containerName;
 
 const originalLog = console.log.bind(console);
 const originalWarn = console.warn.bind(console);
@@ -37,7 +38,7 @@ console.log("Socket Reply conectado ao broker: tcp://broker:5556");
 
 // Pub socket para publicar mensagens no Pub/Sub
 const pubSocket = new zmq.Publisher();
-await pubSocket.connect("tcp://proxy:5558");
+await pubSocket.connect("tcp://proxy:5557");
 
 // Sockets separados para comunicação com servidor de referência
 // (ZeroMQ REQ não permite múltiplas operações simultâneas)
@@ -73,12 +74,12 @@ try {
 
 // Sub socket para receber notificações de eleição no tópico "servers"
 const subSocket = new zmq.Subscriber();
-subSocket.connect("tcp://proxy:5557");
+subSocket.connect("tcp://proxy:5558");
 subSocket.subscribe("servers");
 
 // Sub socket para receber mensagens de replicação
 const replicationSubSocket = new zmq.Subscriber();
-replicationSubSocket.connect("tcp://proxy:5557");
+replicationSubSocket.connect("tcp://proxy:5558");
 replicationSubSocket.subscribe("replication");
 
 let erro = "";
@@ -93,11 +94,13 @@ let logicalClock = 0;
 let physicalClockOffset = 0;
 
 let serverRank = -1;
-let coordinator = null;
-let coordinatorContainer = null; // Nome do container do coordenador
+let coordinator = null; // Identificador único (hostname) do coordenador
+let coordinatorContainer = null; // Hostname do coordenador (mantido por compatibilidade)
+let coordinatorDisplayName = null;
 let messageCount = 0; // Contador para sincronização a cada 10 mensagens
 let serverList = []; // Lista de outros servidores
 let isReplicating = false; // Flag para evitar loops de replicação
+let clockSyncInProgress = false;
 
 function updateLogicalClock(receivedClock) {
   logicalClock = Math.max(logicalClock, receivedClock) + 1;
@@ -121,7 +124,10 @@ function loadData() {
   return JSON.parse(fs.readFileSync(DATA_FILE));
 }
 function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  if (data) {
+    db = data;
+  }
+  dataDirty = true;
 }
 
 function loadMessages() {
@@ -134,9 +140,8 @@ function loadMessages() {
 }
 
 function saveMessage(message) {
-  const messages = loadMessages();
-  messages.push(message);
-  fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2));
+  messagesCache.push(message);
+  messagesDirty = true;
 }
 
 function loadPublications() {
@@ -154,12 +159,75 @@ function loadPublications() {
 }
 
 function savePublication(publication) {
-  const publications = loadPublications();
-  publications.push(publication);
-  fs.writeFileSync(PUBLICATIONS_FILE, JSON.stringify(publications, null, 2));
+  publicationsCache.push(publication);
+  publicationsDirty = true;
 }
 
 let db = loadData();
+let messagesCache = loadMessages();
+let publicationsCache = loadPublications();
+let dataDirty = false;
+let messagesDirty = false;
+let publicationsDirty = false;
+let flushingData = false;
+let flushingMessages = false;
+let flushingPublications = false;
+
+const FLUSH_INTERVAL = parseInt(process.env.FLUSH_INTERVAL_MS || "500", 10);
+
+async function flushDataIfNeeded() {
+  if (!dataDirty || flushingData) {
+    return;
+  }
+  flushingData = true;
+  const snapshot = JSON.stringify(db, null, 2);
+  try {
+    await fsp.writeFile(DATA_FILE, snapshot);
+    dataDirty = false;
+  } catch (err) {
+    console.error(`Erro ao persistir dados:`, err.message);
+  } finally {
+    flushingData = false;
+  }
+}
+
+async function flushMessagesIfNeeded() {
+  if (!messagesDirty || flushingMessages) {
+    return;
+  }
+  flushingMessages = true;
+  const snapshot = JSON.stringify(messagesCache, null, 2);
+  try {
+    await fsp.writeFile(MESSAGES_FILE, snapshot);
+    messagesDirty = false;
+  } catch (err) {
+    console.error(`Erro ao persistir mensagens:`, err.message);
+  } finally {
+    flushingMessages = false;
+  }
+}
+
+async function flushPublicationsIfNeeded() {
+  if (!publicationsDirty || flushingPublications) {
+    return;
+  }
+  flushingPublications = true;
+  const snapshot = JSON.stringify(publicationsCache, null, 2);
+  try {
+    await fsp.writeFile(PUBLICATIONS_FILE, snapshot);
+    publicationsDirty = false;
+  } catch (err) {
+    console.error(`Erro ao persistir publicações:`, err.message);
+  } finally {
+    flushingPublications = false;
+  }
+}
+
+setInterval(() => {
+  flushDataIfNeeded();
+  flushMessagesIfNeeded();
+  flushPublicationsIfNeeded();
+}, FLUSH_INTERVAL);
 
 // Função para obter rank do servidor de referência
 async function getRank() {
@@ -168,7 +236,7 @@ async function getRank() {
     const request = {
       service: "rank",
       data: {
-        user: serverName,
+        user: serverId,
         timestamp: Date.now(),
         clock: logicalClock
       }
@@ -177,7 +245,7 @@ async function getRank() {
     const reply = decode(await refSocketRank.receive());
     updateLogicalClock(reply.data?.clock || 0);
     serverRank = reply.data?.rank || -1;
-    console.log(`Servidor '${serverName}' obteve rank ${serverRank}`);
+    console.log(`Servidor '${serverName}' (${serverId}) obteve rank ${serverRank}`);
     return serverRank;
   } catch (err) {
     console.error(`Erro ao obter rank do servidor de referência: ${err.message}`);
@@ -194,7 +262,7 @@ async function sendHeartbeat() {
   const request = {
     service: "heartbeat",
     data: {
-      user: serverName,
+        user: serverId,
       timestamp: Date.now(),
       clock: logicalClock
     }
@@ -227,7 +295,7 @@ async function getServerList() {
     updateLogicalClock(reply.data?.clock || 0);
     serverList = reply.data?.list || [];
     // Filtra o próprio servidor da lista
-    serverList = serverList.filter(s => s.name !== serverName);
+    serverList = serverList.filter(s => s.name !== serverId);
     return serverList;
   } catch (err) {
     // Ignora erros EBUSY silenciosamente
@@ -240,19 +308,24 @@ async function getServerList() {
 
 // Função para sincronizar relógio físico (Berkeley)
 async function synchronizePhysicalClock() {
-  if (!coordinator || coordinator === serverName) {
-    return; // Não precisa sincronizar se é o coordenador
+  if (!coordinator) {
+    return;
   }
-  
-  if (!coordinatorContainer) {
-    return; // Não sabemos o container do coordenador ainda
+
+  if (coordinator === serverId) {
+    await performCoordinatorClockSync();
+    return;
   }
-  
+
+  const coordinatorHost = coordinatorContainer || coordinator;
+  if (!coordinatorHost) {
+    return;
+  }
+
   try {
-    // Conecta ao coordenador usando o nome do container
     const coordSocket = new zmq.Request();
-    await coordSocket.connect(`tcp://${coordinatorContainer}:5560`);
-    
+    await coordSocket.connect(`tcp://${coordinatorHost}:5560`);
+
     incrementLogicalClock();
     const request = {
       service: "clock",
@@ -261,22 +334,122 @@ async function synchronizePhysicalClock() {
         clock: logicalClock
       }
     };
-    
+
     await coordSocket.send(encode(request));
     const reply = decode(await coordSocket.receive());
     updateLogicalClock(reply.data?.clock || 0);
-    
+
     const coordinatorTime = reply.data?.time || Date.now();
     const localTime = Date.now();
     physicalClockOffset = coordinatorTime - localTime;
-    
-    console.log(`Relógio sincronizado: offset = ${physicalClockOffset}ms`);
-    
+
+    console.log(`Relógio sincronizado com coordenador ${coordinatorDisplayName || coordinator}: offset = ${physicalClockOffset}ms`);
+
     coordSocket.close();
   } catch (err) {
     console.error(`Erro ao sincronizar com coordenador ${coordinator}:`, err);
-    // Se coordenador não está disponível, inicia eleição
     startElection();
+  }
+}
+
+async function performCoordinatorClockSync() {
+  if (clockSyncInProgress) {
+    return;
+  }
+
+  clockSyncInProgress = true;
+  try {
+    const participants = [];
+    const baseTime = Date.now() + physicalClockOffset;
+    participants.push({ id: serverId, delta: 0 });
+
+    const list = await getServerList();
+    for (const entry of list) {
+      const targetId = entry.name;
+      if (targetId === serverId) {
+        continue;
+      }
+
+      const sampleSocket = new zmq.Request();
+      try {
+        await sampleSocket.connect(`tcp://${targetId}:5560`);
+
+        incrementLogicalClock();
+        const sendTime = Date.now();
+        const sampleRequest = {
+          service: "clock",
+          data: {
+            timestamp: sendTime,
+            clock: logicalClock
+          }
+        };
+
+        await sampleSocket.send(encode(sampleRequest));
+        const reply = decode(await sampleSocket.receive());
+        updateLogicalClock(reply.data?.clock || 0);
+
+        const receiveTime = Date.now();
+        const remoteTime = reply.data?.time ?? sendTime;
+        const rtt = receiveTime - sendTime;
+        const estimatedRemote = remoteTime + rtt / 2;
+        const delta = estimatedRemote - baseTime;
+        participants.push({ id: targetId, delta });
+      } catch (err) {
+        console.warn(`Falha ao obter amostra de relógio de ${targetId}:`, err.message);
+      } finally {
+        sampleSocket.close();
+      }
+    }
+
+    if (participants.length <= 1) {
+      return;
+    }
+
+    const avgDelta =
+      participants.reduce((acc, participant) => acc + participant.delta, 0) /
+      participants.length;
+
+    // Ajusta o relógio local (coordenador)
+    physicalClockOffset += avgDelta;
+
+    // Envia ajustes para os demais servidores
+    await Promise.all(
+      participants
+        .filter(participant => participant.id !== serverId)
+        .map(async participant => {
+          const adjustment = avgDelta - participant.delta;
+          await sendClockAdjustment(participant.id, adjustment);
+        })
+    );
+  } catch (err) {
+    console.error("Erro na sincronização Berkeley (coordenador):", err);
+  } finally {
+    clockSyncInProgress = false;
+  }
+}
+
+async function sendClockAdjustment(targetId, adjustment) {
+  const adjustSocket = new zmq.Request();
+  try {
+    await adjustSocket.connect(`tcp://${targetId}:5560`);
+
+    incrementLogicalClock();
+    const request = {
+      service: "clockAdjust",
+      data: {
+        adjustment,
+        timestamp: Date.now(),
+        clock: logicalClock
+      }
+    };
+
+    await adjustSocket.send(encode(request));
+    const reply = decode(await adjustSocket.receive());
+    updateLogicalClock(reply.data?.clock || 0);
+  } catch (err) {
+    console.warn(`Falha ao enviar ajuste de relógio para ${targetId}:`, err.message);
+  } finally {
+    adjustSocket.close();
   }
 }
 
@@ -290,17 +463,19 @@ async function startElection() {
   
   if (higherRankServers.length === 0) {
     // Este servidor é o coordenador
-    coordinator = serverName;
-    coordinatorContainer = containerName;
-    console.log(`Servidor '${serverName}' (${containerName}) eleito como coordenador`);
+    coordinator = serverId;
+    coordinatorContainer = serverId;
+    coordinatorDisplayName = serverName;
+    console.log(`Servidor '${serverName}' (${serverId}) eleito como coordenador`);
     
     // Publica no tópico "servers"
     incrementLogicalClock();
     const electionData = {
       service: "election",
       data: {
-        coordinator: serverName,
-        coordinatorContainer: containerName,
+        coordinator: serverId,
+        coordinatorContainer: serverId,
+        coordinatorDisplayName: serverName,
         timestamp: Date.now(),
         clock: logicalClock
       }
@@ -313,47 +488,55 @@ async function startElection() {
     // Por simplicidade, vamos assumir que pelo menos um servidor responderá
     let electionSuccess = false;
     
-    // Tenta conectar ao serviço "servidor" (Docker Compose faz o balanceamento)
-    try {
-      const electionSocket = new zmq.Request();
-      // Usa o nome do serviço do Docker Compose
-      await electionSocket.connect("tcp://servidor:5560");
-      
-      incrementLogicalClock();
-      const request = {
-        service: "election",
-        data: {
-          timestamp: Date.now(),
-          clock: logicalClock
-        }
-      };
-      
-      await electionSocket.send(encode(request));
-      const reply = decode(await electionSocket.receive());
-      updateLogicalClock(reply.data?.clock || 0);
-      
-      if (reply.data?.election === "OK") {
-        electionSuccess = true;
+    for (const target of higherRankServers) {
+      const targetId = target.name;
+      if (!targetId) {
+        continue;
       }
-      
-      electionSocket.close();
-    } catch (err) {
-      // Nenhum servidor respondeu
-      console.log(`Nenhum servidor com rank maior respondeu: ${err.message}`);
+
+      try {
+        const electionSocket = new zmq.Request();
+        await electionSocket.connect(`tcp://${targetId}:5560`);
+        
+        incrementLogicalClock();
+        const request = {
+          service: "election",
+          data: {
+            timestamp: Date.now(),
+            clock: logicalClock
+          }
+        };
+        
+        await electionSocket.send(encode(request));
+        const reply = decode(await electionSocket.receive());
+        updateLogicalClock(reply.data?.clock || 0);
+        
+        if (reply.data?.election === "OK") {
+          electionSuccess = true;
+          electionSocket.close();
+          break;
+        }
+        
+        electionSocket.close();
+      } catch (err) {
+        console.log(`Servidor ${targetId} não respondeu à eleição: ${err.message}`);
+      }
     }
     
     if (!electionSuccess) {
       // Nenhum servidor respondeu, este servidor é o coordenador
-      coordinator = serverName;
-      coordinatorContainer = containerName;
-      console.log(`Servidor '${serverName}' (${containerName}) eleito como coordenador`);
+      coordinator = serverId;
+      coordinatorContainer = serverId;
+      coordinatorDisplayName = serverName;
+      console.log(`Servidor '${serverName}' (${serverId}) eleito como coordenador`);
       
       incrementLogicalClock();
       const electionData = {
         service: "election",
         data: {
-          coordinator: serverName,
-          coordinatorContainer: containerName,
+          coordinator: serverId,
+          coordinatorContainer: serverId,
+          coordinatorDisplayName: serverName,
           timestamp: Date.now(),
           clock: logicalClock
         }
@@ -369,8 +552,8 @@ console.log("Servidor JS conectado ao proxy Pub/Sub: tcp://proxy:5558");
 console.log("Servidor JS conectado ao servidor de referência: tcp://referencia:5559");
 console.log("=== SERVIDOR PRONTO PARA RECEBER MENSAGENS DOS CLIENTES ===");
 
-// Inicialização (não bloqueante - executa em background após o loop principal começar)
-setTimeout(async () => {
+// Inicialização (não bloqueante - executa em background imediatamente)
+(async () => {
   try {
     await getRank();
     await getServerList();
@@ -379,7 +562,7 @@ setTimeout(async () => {
   } catch (err) {
     console.error("Erro na inicialização:", err);
   }
-}, 2000);
+})();
 
 // Heartbeat periódico (a cada 5 segundos)
 setInterval(() => {
@@ -410,7 +593,13 @@ setInterval(async () => {
       if (data.service === "election" && data.data?.coordinator) {
         coordinator = data.data.coordinator;
         coordinatorContainer = data.data.coordinatorContainer || coordinator;
-        console.log(`Novo coordenador eleito: ${coordinator} (${coordinatorContainer})`);
+        coordinatorDisplayName =
+          data.data.coordinatorDisplayName || data.data.coordinator || null;
+        console.log(
+          `Novo coordenador eleito: ${
+            coordinatorDisplayName || coordinator
+          } (${coordinatorContainer})`
+        );
       }
     }
   }
@@ -428,6 +617,7 @@ async function replicateOperation(operation, operationData) {
     data: {
       operation: operation,
       operationData: operationData,
+      serverId: serverId,
       serverName: serverName,
       timestamp: Date.now(),
       clock: logicalClock
@@ -509,7 +699,7 @@ function applyReplication(operation, operationData) {
       updateLogicalClock(data.data?.clock || 0);
       
       // Ignora replicações do próprio servidor
-      if (data.data?.serverName === serverName) {
+      if (data.data?.serverId === serverId) {
         continue;
       }
       
@@ -552,6 +742,19 @@ if (isElectionSocketActive) {
           }
         };
         await electionSocket.send(encode(reply));
+      } else if (request.service === "clockAdjust") {
+        const adjustment = request.data?.adjustment || 0;
+        physicalClockOffset += adjustment;
+        incrementLogicalClock();
+        const reply = {
+          service: "clockAdjust",
+          data: {
+            status: "OK",
+            timestamp: Date.now(),
+            clock: logicalClock
+          }
+        };
+        await electionSocket.send(encode(reply));
       }
     }
   })();
@@ -559,15 +762,13 @@ if (isElectionSocketActive) {
   console.log("Socket de eleição inativo; ignorando requisições de eleição neste servidor.");
 }
 
-console.log(`[${serverName}] Iniciando loop principal de processamento de mensagens...`);
 for await (const [msg] of socket) {
-  console.log(`[${serverName}] Mensagem recebida do broker (tamanho: ${msg.length} bytes)`); 
+  console.log(`Mensagem recebida | tamanho=${msg.length} bytes`);
   let request;
   try {
     request = decode(msg);
-    console.log(`[${serverName}] Mensagem decodificada com sucesso`);
   } catch (err) {
-    console.error(`[${serverName}] Erro ao parsear MessagePack:`, err);
+    console.error(`Erro ao decodificar mensagem:`, err.message);
     incrementLogicalClock();
     const errorReply = {
       service: "error",
@@ -593,7 +794,6 @@ for await (const [msg] of socket) {
   }
 
   const opcao = request.service || request.opcao; // Suporta ambos os formatos
-  console.log(`[${serverName}] Recebida requisição: ${opcao}`, JSON.stringify(request));
   const data = request.data;
   let reply = {
     service: "error",
@@ -863,7 +1063,7 @@ for await (const [msg] of socket) {
 
   try {
     if (typeof reply === "object") {
-      console.log(`[${serverName}] Enviando resposta:`, JSON.stringify(reply));
+      console.log(`Resposta enviada | tamanho=${JSON.stringify(reply).length} bytes`);
       await socket.send(encode(reply));
     } else {
       incrementLogicalClock();

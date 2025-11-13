@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instalar dependências de build para zeromq
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    zeromq-dev
+
+# Copiar arquivos
+COPY ../package.json .
+COPY ../cliente_automatico.js .
+
+# Instalar dependências Node.js
+RUN npm install --production
+
+CMD ["node", "cliente_automatico.js"]
+

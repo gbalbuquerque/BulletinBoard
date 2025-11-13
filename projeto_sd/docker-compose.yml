@@ -1,0 +1,106 @@
+services:
+
+  referencia:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_referencia
+    image: cc7261:pyzmq
+    container_name: referencia
+    volumes:
+      - ./servidor_referencia.py:/app/servidor_referencia.py
+    ports:
+      - 5560:5560
+
+  proxy:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_proxy
+    image: cc7261:pyzmq
+    container_name: proxy
+    volumes:
+      - ./proxy.py:/app/proxy.py
+    ports:
+      - 5557:5557
+      - 5558:5558
+      - 5570:5570
+      - 5571:5571
+
+  publisher:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_publisher
+    image: cc7261:pyzmq
+    container_name: publisher
+    volumes:
+      - ./publisher.py:/app/publisher.py
+    deploy:
+      replicas: 1
+
+  subscriber:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_subscriber
+    image: cc7261:pyzmq
+    container_name: subscriber
+    volumes:
+      - ./subscriber.py:/app/subscriber.py
+    deploy:
+      replicas: 1
+  
+  broker:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_broker
+    container_name: broker
+    ports:
+      - 5555:5555
+      - 5556:5556
+
+  servidor:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_servidor
+    volumes:
+      - ./servidor.py:/app/servidor.py
+      - dados_compartilhados:/app/dados  # Volume compartilhado para persistência
+    ports:
+      - "5561"  # Porta para sincronização entre servidores
+      - "5562"  # Porta para replicação de dados
+    depends_on:
+      - broker
+      - referencia
+      - proxy
+    deploy:
+      replicas: 3
+    
+
+  cliente:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_cliente
+    container_name: cliente
+    stdin_open: true
+    tty: true
+    depends_on:
+      - servidor
+    volumes:
+      - ./cliente.c:/app/cliente.c
+    deploy:
+      replicas: 1
+
+  cliente_automatico:
+    build:
+      context: .
+      dockerfile: ./DockerFiles/Dockerfile_cliente_automatico
+    depends_on:
+      - servidor
+      - broker
+    volumes:
+      - ./cliente_automatico.js:/app/cliente_automatico.js
+      - ./package.json:/app/package.json
+    deploy:
+      replicas: 2
+
+volumes:
+  dados_compartilhados:
+    driver: local

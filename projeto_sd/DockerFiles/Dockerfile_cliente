@@ -1,0 +1,17 @@
+FROM alpine:3.21
+
+WORKDIR /app
+
+# Instalar dependências
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    zeromq-dev
+
+# Copiar código
+COPY ../cliente.c .
+
+# Compilar (sem msgpack por enquanto, usará JSON)
+RUN gcc -o cliente cliente.c -lzmq
+
+CMD ["./cliente"]
