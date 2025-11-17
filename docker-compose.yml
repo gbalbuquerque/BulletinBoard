@@ -63,7 +63,8 @@ services:
       context: .
       dockerfile: Dockerfile_cliente_automatico
     volumes:
-      - ./cliente_automatico.py:/app/cliente_automatico.py
+      - ./cliente_automatico.c:/app/cliente_automatico.c
+      - ./entrypoint_cliente_automatico.sh:/app/entrypoint_cliente_automatico.sh
     depends_on:
       - servidor
       - proxy_pubsub

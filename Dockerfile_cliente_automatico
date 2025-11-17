@@ -1,10 +1,27 @@
-FROM python:3.13.7-alpine3.21
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
-RUN pip install pyzmq msgpack
+# Instala dependências
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    libzmq5 \
+    libzmq3-dev \
+    libmsgpackc2 \
+    libmsgpack-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY ./cliente_automatico.py .
+# Copia o código fonte e script de entrada
+COPY ./cliente_automatico.c .
+COPY ./entrypoint_cliente_automatico.sh .
 
-CMD ["python", "cliente_automatico.py"]
+# Torna o script executável
+RUN chmod +x entrypoint_cliente_automatico.sh
 
+# Compila o programa inicialmente
+RUN gcc -o cliente_automatico cliente_automatico.c -lzmq -lmsgpackc -lm -lpthread
+
+# Usa o script de entrada que recompila se necessário
+ENTRYPOINT ["./entrypoint_cliente_automatico.sh"]

@@ -7231,5 +7231,389 @@
     "timestamp": 1762988968.196737,
     "clock": 5329,
     "savedAt": 1762988998526
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8684",
+    "message": "Olá, esta é uma mensagem de teste!",
+    "timestamp": 1763077107.27046,
+    "clock": 25,
+    "savedAt": 1763077117066
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Sistema funcionando corretamente.",
+    "timestamp": 1763077127.293379,
+    "clock": 35,
+    "savedAt": 1763077137087
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Mensagem automática gerada pelo cliente.",
+    "timestamp": 1763077166.933961,
+    "clock": 51,
+    "savedAt": 1763077177138
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8684",
+    "message": "Verificando funcionalidade de Pub/Sub.",
+    "timestamp": 1763077187.691465,
+    "clock": 61,
+    "savedAt": 1763077197162
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Teste de persistência de mensagens.",
+    "timestamp": 1763077227.416381,
+    "clock": 77,
+    "savedAt": 1763077237211
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8684",
+    "message": "Mensagem enviada automaticamente.",
+    "timestamp": 1763077247.439844,
+    "clock": 87,
+    "savedAt": 1763077257234
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8684",
+    "message": "Última mensagem do conjunto de testes.",
+    "timestamp": 1763077287.185282,
+    "clock": 103,
+    "savedAt": 1763077297283
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Sistema funcionando corretamente.",
+    "timestamp": 1763077347.256307,
+    "clock": 127,
+    "savedAt": 1763077357351
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8684",
+    "message": "Teste de publicação em canal.",
+    "timestamp": 1763077367.884119,
+    "clock": 137,
+    "savedAt": 1763077377372
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Verificando funcionalidade de Pub/Sub.",
+    "timestamp": 1763077407.629179,
+    "clock": 153,
+    "savedAt": 1763077417421
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8684",
+    "message": "Esta é a mensagem número 6.",
+    "timestamp": 1763077427.655407,
+    "clock": 163,
+    "savedAt": 1763077437442
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Mensagem enviada automaticamente.",
+    "timestamp": 1763077457.689834,
+    "clock": 176,
+    "savedAt": 1763077467477
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8684",
+    "message": "Verificando comunicação entre clientes.",
+    "timestamp": 1763077487.756633,
+    "clock": 189,
+    "savedAt": 1763077497510
+  },
+  {
+    "channel": "noticias",
+    "user": "user_8684",
+    "message": "Olá, esta é uma mensagem de teste!",
+    "timestamp": 1763077548.301224,
+    "clock": 213,
+    "savedAt": 1763077557585
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Teste de publicação em canal.",
+    "timestamp": 1763077577.897117,
+    "clock": 226,
+    "savedAt": 1763077587623
+  },
+  {
+    "channel": "noticias",
+    "user": "user_8684",
+    "message": "Mensagem automática gerada pelo cliente.",
+    "timestamp": 1763077607.872096,
+    "clock": 239,
+    "savedAt": 1763077617655
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Esta é a mensagem número 6.",
+    "timestamp": 1763077637.909908,
+    "clock": 252,
+    "savedAt": 1763077647689
+  },
+  {
+    "channel": "noticias",
+    "user": "user_8684",
+    "message": "Teste de persistência de mensagens.",
+    "timestamp": 1763077667.947675,
+    "clock": 265,
+    "savedAt": 1763077677725
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8790",
+    "message": "Verificando comunicação entre clientes.",
+    "timestamp": 1763077697.983783,
+    "clock": 278,
+    "savedAt": 1763077707760
+  },
+  {
+    "channel": "noticias",
+    "user": "user_8684",
+    "message": "Última mensagem do conjunto de testes.",
+    "timestamp": 1763077728.019955,
+    "clock": 291,
+    "savedAt": 1763077737796
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8790",
+    "message": "Olá, esta é uma mensagem de teste!",
+    "timestamp": 1763077758.610337,
+    "clock": 304,
+    "savedAt": 1763077767838
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8684",
+    "message": "Sistema funcionando corretamente.",
+    "timestamp": 1763077788.089111,
+    "clock": 317,
+    "savedAt": 1763077797875
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8790",
+    "message": "Mensagem automática gerada pelo cliente.",
+    "timestamp": 1763077818.122937,
+    "clock": 330,
+    "savedAt": 1763077827912
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8810",
+    "message": "Sistema funcionando corretamente.",
+    "timestamp": 1763345469.856328,
+    "clock": 33,
+    "savedAt": 1763345479908
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8810",
+    "message": "Teste de publicação em canal.",
+    "timestamp": 1763345490.197383,
+    "clock": 43,
+    "savedAt": 1763345499934
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8810",
+    "message": "Mensagem automática gerada pelo cliente.",
+    "timestamp": 1763345509.945692,
+    "clock": 53,
+    "savedAt": 1763345519958
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_3376",
+    "message": "Verificando funcionalidade de Pub/Sub.",
+    "timestamp": 1763345530.496027,
+    "clock": 63,
+    "savedAt": 1763345539980
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_3376",
+    "message": "Esta é a mensagem número 6.",
+    "timestamp": 1763345549.992799,
+    "clock": 73,
+    "savedAt": 1763345560004
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_3376",
+    "message": "Mensagem enviada automaticamente.",
+    "timestamp": 1763345589.998665,
+    "clock": 89,
+    "savedAt": 1763345600157
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8810",
+    "message": "Verificando comunicação entre clientes.",
+    "timestamp": 1763345610.530584,
+    "clock": 99,
+    "savedAt": 1763345620180
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Olá, esta é uma mensagem de teste!",
+    "timestamp": 1763345671.011383,
+    "clock": 123,
+    "savedAt": 1763345680247
+  },
+  {
+    "channel": "noticias",
+    "user": "user_3376",
+    "message": "Teste de publicação em canal.",
+    "timestamp": 1763345710.437565,
+    "clock": 139,
+    "savedAt": 1763345720289
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Mensagem automática gerada pelo cliente.",
+    "timestamp": 1763345730.400912,
+    "clock": 149,
+    "savedAt": 1763345740313
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Esta é a mensagem número 6.",
+    "timestamp": 1763345770.204429,
+    "clock": 165,
+    "savedAt": 1763345780354
+  },
+  {
+    "channel": "noticias",
+    "user": "user_3376",
+    "message": "Teste de persistência de mensagens.",
+    "timestamp": 1763345790.687824,
+    "clock": 175,
+    "savedAt": 1763345800374
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Verificando comunicação entre clientes.",
+    "timestamp": 1763345830.611749,
+    "clock": 191,
+    "savedAt": 1763345840419
+  },
+  {
+    "channel": "noticias",
+    "user": "user_3376",
+    "message": "Última mensagem do conjunto de testes.",
+    "timestamp": 1763345850.53407,
+    "clock": 201,
+    "savedAt": 1763345860441
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Olá, esta é uma mensagem de teste!",
+    "timestamp": 1763345891.203628,
+    "clock": 217,
+    "savedAt": 1763345900486
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_3376",
+    "message": "Sistema funcionando corretamente.",
+    "timestamp": 1763345910.602923,
+    "clock": 227,
+    "savedAt": 1763345920512
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_3376",
+    "message": "Mensagem automática gerada pelo cliente.",
+    "timestamp": 1763345950.405437,
+    "clock": 243,
+    "savedAt": 1763345960558
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Verificando funcionalidade de Pub/Sub.",
+    "timestamp": 1763345970.935239,
+    "clock": 253,
+    "savedAt": 1763345980579
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_3376",
+    "message": "Teste de persistência de mensagens.",
+    "timestamp": 1763346010.776434,
+    "clock": 269,
+    "savedAt": 1763346020628
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Mensagem enviada automaticamente.",
+    "timestamp": 1763346030.740298,
+    "clock": 279,
+    "savedAt": 1763346040651
+  },
+  {
+    "channel": "rogerio evas",
+    "user": "user_8810",
+    "message": "Última mensagem do conjunto de testes.",
+    "timestamp": 1763346070.548581,
+    "clock": 295,
+    "savedAt": 1763346080699
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_3376",
+    "message": "Sistema funcionando corretamente.",
+    "timestamp": 1763346130.719247,
+    "clock": 319,
+    "savedAt": 1763346140773
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8810",
+    "message": "Teste de publicação em canal.",
+    "timestamp": 1763346151.231558,
+    "clock": 329,
+    "savedAt": 1763346160799
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_3376",
+    "message": "Verificando funcionalidade de Pub/Sub.",
+    "timestamp": 1763346191.091599,
+    "clock": 345,
+    "savedAt": 1763346200845
+  },
+  {
+    "channel": "guigoland",
+    "user": "user_8810",
+    "message": "Esta é a mensagem número 6.",
+    "timestamp": 1763346210.958579,
+    "clock": 355,
+    "savedAt": 1763346220872
   }
 ]
